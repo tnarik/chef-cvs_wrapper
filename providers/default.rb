@@ -43,26 +43,21 @@ action :create do
     end   
 
 		# Set host aliases
-    hostsfile_entry "local_#{new_resource.cvs_hostalias}" do
+    hostsfile_entry "local_#{new_resource.name}" do
       ip_address "127.0.0.1"
-      hostname  "local_#{new_resource.cvs_hostalias}"
+      hostname  "local_#{new_resource.name}"
       action :append
     end
 
-    hostsfile_entry "direct_#{new_resource.cvs_hostalias}" do
+    hostsfile_entry "direct_#{new_resource.name}" do
       ip_address new_resource.cvs_hostname
-      hostname  "direct_#{new_resource.cvs_hostalias}"
+      hostname  "direct_#{new_resource.name}"
       action :append
     end
 
     # configure: 
-    # - a tunnel for the host
     # - the key for that host
-    # - an alias for the host
-    # - remote and local entry in hosts
     # - files for the cvs_wrapper
-    # cvs_wrapper "" do
-    # end
 
 #    # Require installation of the Jumpbox SSH key for the user (where does it come from?)
 #    chef_gem "chef-vault"
@@ -86,6 +81,19 @@ action :create do
           Compression: "yes"
       user new_resource.user
 		end
+
+    template ::File.expand_path("#{new_resource.name}_#{new_resource.cvs_port}", cvs_wrapper_folder) do
+      owner new_resource.user
+      group new_resource.user
+      cookbook new_resource.cookbook
+      source "cvs_wrapper_config.erb"
+      variables ({
+        tunnel: "tunnel_#{new_resource.name}",
+        jumpbox: new_resource.cvs_jumpbox,
+        sleep: new_resource.cvs_jumpbox_sleep
+      })
+      mode 0755
+    end
 
     ruby_block "check_existance_of_private_key" do
     	block do

@@ -1,10 +1,11 @@
 # CVS WRAPPER TO USE WHEN REQUIRING THE USE OF A TUNNEL
 function cvs() {
+(
   # Extract CVSROOT with priorities
   # 1. -d
-  local DARG=`expr " $*" : '\ \(-d.*\)'`
-  local OPTIND
-  local FOUND_CVSROOT=""
+  DARG=`expr " $*" : '\ \(-d.*\)'`
+  OPTIND=1
+  FOUND_CVSROOT=""
   while getopts ":d:" opts $DARG; do
     case $opts in
       "d") FOUND_CVSROOT=$OPTARG
@@ -22,22 +23,26 @@ function cvs() {
     FOUND_CVSROOT=$CVSROOT
   fi
 
-  local TARGET=`expr "$FOUND_CVSROOT" : '.*@\([^/]*\)\/.*'`
+  TARGET=`expr "$FOUND_CVSROOT" : '.*@\([^/]*\)\/.*'`
   TARGET=${TARGET//:/_}
 
 #echo "$TARGET" >> /tmp/targets_cvs
 #echo "$*" >> /tmp/targets_cvs
  
-  local DIRECT_CONNECTION=true
+  DIRECT_CONNECTION="true"
+  TUNNEL_NAME=""
+  TUNNEL_SLEEP=""
+
+  source ~/.cvs_wrapper.d/${TARGET}
   if [ -n "$TARGET" ]; then
     echo "let's read a configuration/status file about $TARGET"
 
-    DIRECT_CONNECTION=false
-    local TUNNEL_NAME="vftunnel"
-    local TUNNEL_SLEEP="1"
+    DIRECT_CONNECTION=${DIRECT_CONNECTION}
+    TUNNEL_NAME=${TUNNEL}
+    TUNNEL_SLEEP=${SLEEP}
   fi
 
-  if [ $DIRECT_CONNECTION == true ]; then
+  if [ "$DIRECT_CONNECTION" == "true" ]; then
     #execute the real CVS
     command cvs "$@"
   else
@@ -45,4 +50,5 @@ function cvs() {
     ssh -f ${TUNNEL_NAME} sleep ${TUNNEL_SLEEP}
     command cvs "$@"
   fi
+)
 }
