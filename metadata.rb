@@ -6,6 +6,9 @@ description      'Installs/Configures cvs_wrapper'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '0.1.0'
 
-%w{hostsfile ssh_config ssh_known_hosts}.each do |cookbook|
+#ssh_known_hosts
+%w{ruby_build ssh_user ssh_config}.each do |cookbook|
   depends cookbook
 end
+
+depends 'hostsfile', '>= 2.0.1'

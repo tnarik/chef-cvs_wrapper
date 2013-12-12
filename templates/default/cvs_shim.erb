@@ -1,0 +1,171 @@
+  # CVS WRAPPER TO USE WHEN REQUIRING THE USE OF A TUNNEL
+  function cvs_root(){
+    # Extract CVSROOT with priorities
+    # 1. -d
+    local DARG=`expr " $*" : '\ \(-d.*\)'`
+    local OPTIND
+    local FOUND_CVSROOT=""
+    while getopts ":d:" opts $DARG; do
+      case $opts in
+        d) FOUND_CVSROOT=$OPTARG
+        ;;
+      esac
+    done
+
+    # 2. CVS/Root
+    if [ -z "$FOUND_CVSROOT" ] && [ -f "CVS/Root" ]; then
+      FOUND_CVSROOT=$(<CVS/Root)
+    fi
+
+    # 3. $CVSROOT
+    if [ -z "$FOUND_CVSROOT" ]; then
+      FOUND_CVSROOT=$CVSROOT
+    fi
+
+    printf "%s" "${FOUND_CVSROOT}"
+  }
+
+  function cvs_path(){
+    printf "%s" "$HOME/.cvs_wrapper.d/etc/$1"
+  }
+
+ function cvs_config(){
+    printf "%s" "$HOME/.cvs_wrapper.d/config"
+  }
+
+  function cvs_hostsfile_on(){
+    ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+  }
+
+  function cvs_hostsfile_off(){
+    ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+  }
+
+  function cvs_on(){
+    local PATH_TARGET=$(cvs_path $1)
+    if [ -f "${PATH_TARGET}" ]; then
+      sed -e 's/DIRECT_CONNECTION=.*/DIRECT_CONNECTION=true/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
+      mv ${PATH_TARGET}_$$ ${PATH_TARGET}
+
+      cvs_hostsfile_on
+    fi
+  }
+
+  function cvs_off(){
+    local PATH_TARGET=$(cvs_path $1)
+    if [ -f "${PATH_TARGET}" ]; then
+      sed -e 's/DIRECT_CONNECTION=.*/DIRECT_CONNECTION=false/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
+      mv ${PATH_TARGET}_$$ ${PATH_TARGET}
+
+      cvs_hostsfile_off
+    fi
+  }
+
+  function cvs_auto(){
+    local PATH_TARGET=$(cvs_path $1)
+    if [ -f "${PATH_TARGET}" ]; then
+      sed -e 's/DIRECT_CONNECTION=.*/DIRECT_CONNECTION=auto/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
+      mv ${PATH_TARGET}_$$ ${PATH_TARGET}
+    fi
+  }
+
+  function cvs_status(){
+    echo "currently using $1"
+    echo "some status"
+  }
+  function cvs_list(){
+    local PATH_TARGET=$(cvs_path ".")
+    command ls "${PATH_TARGET}"
+  }
+
+  function cvs_help(){
+    printf "%s" "-c on|off|auto [target]  => switches direct connection (on)"
+    printf "%s" "-c list             => lists the configurations known"
+    printf "%s" "-c help             => displays this help"
+    printf "%s" "-c status           => NOT YET implemented"
+  }
+
+  function cvs(){
+  (
+    TARGET=`expr $(cvs_root $*) : '.*@\([^/]*\)\/.*'`
+    TARGET=${TARGET//:/_}
+
+    # Load configuration
+    DIRECT_CONNECTION="true"
+    if [ -n "$TARGET" ]; then
+      source $(cvs_path ${TARGET})
+      DIRECT_CONNECTION=${DIRECT}
+      HOSTALIAS=${HOSTALIAS}
+      TUNNEL_NAME=${TUNNEL}
+      TUNNEL_SLEEP=${SLEEP}
+    fi
+
+    OPTIND=1
+    while getopts ":c:" opts; do
+      case $opts in
+        c) WRAPPER_COMMAND="$OPTARG"
+        ;;
+      esac
+    done
+    if [ -n "$WRAPPER_COMMAND" ]; then
+      case $WRAPPER_COMMAND in
+        "on") cvs_on $TARGET && exit
+        ;;
+        "off") cvs_off $TARGET && exit
+        ;;
+        "auto") cvs_auto $TARGET && exit
+        ;;
+        "status") cvs_status $TARGET && exit
+        ;;
+        "list") cvs_list && exit
+        ;;
+        "help") cvs_help && exit
+        ;;
+      esac
+    fi
+
+    source $(cvs_config)
+
+    # Detect direct connection
+    #### CAN SUDO? THEN SUDO
+    if [ "${AUTO_SET_HOSTS}" == "true" ]; then
+      case $DIRECT_CONNECTION in
+        "auto")
+          DIRECT=`ruby -e 'require "thecon"; require "stringio"; oout = $>; $> = fake = StringIO.new; e=Thecon.ready? '${PORT}', "'${IP}'"; $> = oout; p e;'`
+          echo "DIRECT connection detected is ${DIRECT}"
+        ;;
+        "true")
+          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+        ;;
+        "false")
+          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+        ;;
+      esac
+    fi
+
+    case $DIRECT_CONNECTION in
+      "auto")
+        DIRECT=`ruby -e 'require "thecon"; require "stringio"; oout = $>; $> = fake = StringIO.new; e=Thecon.ready? '${PORT}', "'${IP}'"; $> = oout; p e;'`
+        echo "DIRECT connection detected is ${DIRECT}"
+
+        #if [ "${AUTO_SET_HOSTS}" == "true" ]; then
+        #fi
+      ;;
+      "true")
+        if [ "${AUTO_SET_HOSTS}" == "true" ]; then
+          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+        fi
+        #execute the real CVS
+        command cvs "$@"
+      ;;
+      "false")
+        if [ "${AUTO_SET_HOSTS}" == "true" ]; then
+          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+        fi
+        #execute CVS through an SSH tunnel
+        ssh -f ${TUNNEL_NAME} sleep ${TUNNEL_SLEEP}
+        command cvs "$@"
+      ;;
+    esac
+  )
+  }
