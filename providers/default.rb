@@ -14,16 +14,24 @@ end
 use_inline_resources
 
 action :create do
-	converge_by("created cvs wrapper for #{new_resource.cvs_hostalias}") do
-		Chef::Log.info "Create user [#{new_resource.user}]"
-		user new_resource.user do
-		end.run_action(:create)
+  converge_by("created cvs wrapper for #{new_resource.cvs_hostalias}") do
+    Chef::Log.info "Create user [#{new_resource.user}]"
+    user new_resource.user do
+    end.run_action(:create)
 
-		# Reload Ohai passwd
-		ohai "reload_passwd" do
-    	plugin "passwd"
-		end
-		
+    # Reload Ohai passwd
+    ohai "reload_passwd" do
+      plugin "passwd"
+    end
+
+    if node[:cvs_wrapper][:sudo]
+      sudo new_resource.user do
+        user new_resource.user
+        runas 'root'
+        nopasswd true
+      end
+    end
+    
     cvs_wrapper_folder = ::File.expand_path(node[:cvs_wrapper][:user_subdir], "~#{new_resource.user}")
     cvs_wrapper_etc_folder = ::File.expand_path(node[:cvs_wrapper][:etcdir], cvs_wrapper_folder)
     cvs_wrapper_bin_folder = ::File.expand_path(node[:cvs_wrapper][:bindir], cvs_wrapper_folder)
@@ -75,7 +83,7 @@ action :create do
 
       direct_connection_detected = true.to_s
     else
-		  # Set host aliases
+      # Set host aliases
       # through the tunnel
       hostsfile_entry "local_#{new_resource.cvs_hostalias}" do
         ip_address "127.0.0.1"
@@ -101,13 +109,13 @@ action :create do
 #    require 'chef-vault'
 #    
 #    begin
-#    	item = ChefVault::Item.load("secrets", "vaultuser")
-#    	log item["vaultuser"]
+#     item = ChefVault::Item.load("secrets", "vaultuser")
+#     log item["vaultuser"]
 #    rescue ChefVault::Exceptions::SecretDecryption
-#    	log "The VF Assembler secret could not be decrypted" do
-#      	level :error
-#    	end
-#    	# raise "The VF Assembler secret could not be decrypted"
+#     log "The VF Assembler secret could not be decrypted" do
+#       level :error
+#     end
+#     # raise "The VF Assembler secret could not be decrypted"
 #    end
 
     # Add the key if a key is configured (and then create the ssh config)
@@ -122,35 +130,35 @@ action :create do
 
 
       #Redo this bit for the ssh_user cookbook
-		  ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
-		   	options User: new_resource.cvs_jumpbox_user,
+      ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
+        options User: new_resource.cvs_jumpbox_user,
             Hostname: new_resource.cvs_jumpbox,
             IdentityFile: "~/.ssh/id_rsa_mmmvf",
             LocalForward: "#{new_resource.cvs_port} #{new_resource.cvs_hostname}:#{new_resource.cvs_port}",
             Compression: "yes"
         user new_resource.user
-		   end
+       end
    
       ssh_user_known_hosts new_resource.cvs_jumpbox do
         hashed true
         user new_resource.user
       end
 
-      #Configure initial access
+      #Configure initial access for "static" mode.
       chef_gem "thecon"
       require 'thecon'
       
       if node[:cvs_wrapper][:style] == "static"
         direct_connection_detected = Thecon.ready?(new_resource.cvs_port, new_resource.cvs_hostname).to_s
+
+        hostsfile_entry "#{new_resource.cvs_hostalias}" do
+          ip_address ( direct_connection_detected == true.to_s ) ? new_resource.cvs_hostname : "127.0.0.1"
+          hostname  "#{new_resource.cvs_hostalias}"
+          unique true
+          action :append
+        end
       else
         direct_connection_detected = "auto"
-      end
-
-      hostsfile_entry "#{new_resource.cvs_hostalias}" do
-        ip_address ( direct_connection_detected == true.to_s ) ? new_resource.cvs_hostname : "127.0.0.1"
-        hostname  "#{new_resource.cvs_hostalias}"
-        unique true
-        action :append
       end
     end
 

@@ -34,17 +34,17 @@
   }
 
   function cvs_hostsfile_on(){
-    ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+    sudo `which ruby` -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
   }
 
   function cvs_hostsfile_off(){
-    ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+    sudo `which ruby` -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
   }
 
   function cvs_on(){
     local PATH_TARGET=$(cvs_path $1)
     if [ -f "${PATH_TARGET}" ]; then
-      sed -e 's/DIRECT_CONNECTION=.*/DIRECT_CONNECTION=true/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
+      sed -e 's/DIRECT=.*/DIRECT=true/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
       mv ${PATH_TARGET}_$$ ${PATH_TARGET}
 
       cvs_hostsfile_on
@@ -54,7 +54,7 @@
   function cvs_off(){
     local PATH_TARGET=$(cvs_path $1)
     if [ -f "${PATH_TARGET}" ]; then
-      sed -e 's/DIRECT_CONNECTION=.*/DIRECT_CONNECTION=false/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
+      sed -e 's/DIRECT=.*/DIRECT=false/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
       mv ${PATH_TARGET}_$$ ${PATH_TARGET}
 
       cvs_hostsfile_off
@@ -64,7 +64,7 @@
   function cvs_auto(){
     local PATH_TARGET=$(cvs_path $1)
     if [ -f "${PATH_TARGET}" ]; then
-      sed -e 's/DIRECT_CONNECTION=.*/DIRECT_CONNECTION=auto/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
+      sed -e 's/DIRECT=.*/DIRECT=auto/g' ${PATH_TARGET} > ${PATH_TARGET}_$$
       mv ${PATH_TARGET}_$$ ${PATH_TARGET}
     fi
   }
@@ -125,43 +125,26 @@
     fi
 
     source $(cvs_config)
-
-    # Detect direct connection
-    #### CAN SUDO? THEN SUDO
-    if [ "${AUTO_SET_HOSTS}" == "true" ]; then
+    # Detect direct connection only when 'auto', otherwise, respect settings or expect forceful set by the user
+    # '/etc/hosts' manipulation requires 'sudo'
+    if [ "${DIRECT_CONNECTION}" == "auto" ] && [ "${AUTO_SET_HOSTS}" == "true" ]; then
+      DIRECT_CONNECTION=`ruby -e 'require "thecon"; require "stringio"; oout = $>; $> = fake = StringIO.new; e=Thecon.ready? '${PORT}', "'${IP}'"; $> = oout; p e;'`
       case $DIRECT_CONNECTION in
-        "auto")
-          DIRECT=`ruby -e 'require "thecon"; require "stringio"; oout = $>; $> = fake = StringIO.new; e=Thecon.ready? '${PORT}', "'${IP}'"; $> = oout; p e;'`
-          echo "DIRECT connection detected is ${DIRECT}"
+        "true") cvs_hostsfile_on
         ;;
-        "true")
-          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
-        ;;
-        "false")
-          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
+        "false") cvs_hostsfile_off
         ;;
       esac
+
     fi
 
+    # Calculated DIRECT_CONNECTION (either static or auto)
     case $DIRECT_CONNECTION in
-      "auto")
-        DIRECT=`ruby -e 'require "thecon"; require "stringio"; oout = $>; $> = fake = StringIO.new; e=Thecon.ready? '${PORT}', "'${IP}'"; $> = oout; p e;'`
-        echo "DIRECT connection detected is ${DIRECT}"
-
-        #if [ "${AUTO_SET_HOSTS}" == "true" ]; then
-        #fi
-      ;;
       "true")
-        if [ "${AUTO_SET_HOSTS}" == "true" ]; then
-          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "'${IP}'", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
-        fi
         #execute the real CVS
         command cvs "$@"
       ;;
       "false")
-        if [ "${AUTO_SET_HOSTS}" == "true" ]; then
-          ruby -e 'require "hostsfile"; h= Hostsfile::Manipulator.new(); h.append(ip_address: "127.0.0.1", hostname: "'${HOSTALIAS}'", aliases: nil, unique: true); h.save;'
-        fi
         #execute CVS through an SSH tunnel
         ssh -f ${TUNNEL_NAME} sleep ${TUNNEL_SLEEP}
         command cvs "$@"
