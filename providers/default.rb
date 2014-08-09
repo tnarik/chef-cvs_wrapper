@@ -21,7 +21,7 @@ action :create do
 
     # Reload Ohai passwd
     ohai "reload_passwd" do
-      plugin "passwd"
+      plugin "etc"
     end
 
     if node[:cvs_wrapper][:sudo]
@@ -101,7 +101,6 @@ action :create do
       end
 
     # configure: 
-    # - the key for that host
     # - files for the cvs_wrapper
 
 #    # Require installation of the Jumpbox SSH key for the user (where does it come from?)
@@ -118,22 +117,23 @@ action :create do
 #     # raise "The VF Assembler secret could not be decrypted"
 #    end
 
-    # Add the key if a key is configured (and then create the ssh config)
-#    ruby_block "check_existance_of_private_key_adding_it_please_based_on_config" do
-#      block do
-#         ::FileUtils.cp "/vagrant/id_rsa_mmmvf", "/home/developer/.ssh/id_rsa_mmmvf"
-#         ::FileUtils.chown new_resource.user, new_resource.user, '/home/developer/.ssh/id_rsa_mmmvf'
-#        #raise "No existe el archivo seguro para el tunnel, please make sure you copy it!!! "
-#      end
-#      not_if { ::File.exists?("/home/developer/.ssh/id_rsa_mmmvf") }
-#    end
+      jumpbox_identity_file = ::File.expand_path(new_resource.cvs_jumpbox_identity_file || "", "~#{new_resource.user}")
+
+      ruby_block "add_private_key" do
+        block do
+           ::FileUtils.cp new_resource.cvs_jumpbox_identity_file_source, jumpbox_identity_file
+           ::FileUtils.chown new_resource.user, new_resource.user, jumpbox_identity_file
+          #raise "No existe el archivo seguro para el tunnel, please make sure you copy it!!! "
+        end
+        not_if { ::File.exists?(jumpbox_identity_file) }
+      end
 
 
       #Redo this bit for the ssh_user cookbook
-      ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
+      ssh_user_config "tunnel_#{new_resource.cvs_hostalias}" do
         options User: new_resource.cvs_jumpbox_user,
             Hostname: new_resource.cvs_jumpbox,
-            IdentityFile: "~/.ssh/id_rsa_mmmvf",
+            IdentityFile: new_resource.cvs_jumpbox_identity_file,
             LocalForward: "#{new_resource.cvs_port} #{new_resource.cvs_hostname}:#{new_resource.cvs_port}",
             Compression: "yes"
         user new_resource.user
