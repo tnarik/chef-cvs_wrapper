@@ -2,7 +2,7 @@
 # Cookbook Name:: cvs_wrapper
 # Provider:: default
 #
-# Copyright (C) 2013 YOUR_NAME
+# Copyright (C) 2013-2014 Tnarik Innael
 # 
 # All rights reserved - Do Not Redistribute
 #
@@ -32,30 +32,18 @@ action :create do
       end
     end
     
-    cvs_wrapper_folder = ::File.expand_path(node[:cvs_wrapper][:user_subdir], "~#{new_resource.user}")
-    cvs_wrapper_etc_folder = ::File.expand_path(node[:cvs_wrapper][:etcdir], cvs_wrapper_folder)
-    cvs_wrapper_bin_folder = ::File.expand_path(node[:cvs_wrapper][:bindir], cvs_wrapper_folder)
+    cvs_wrapper_folder = ::File.expand_path(node[:cvs_wrapper][:user_dir], "~#{new_resource.user}")
+    cvs_wrapper_etc_folder = ::File.expand_path(node[:cvs_wrapper][:etc_dir], cvs_wrapper_folder)
+    cvs_wrapper_bin_folder = ::File.expand_path(node[:cvs_wrapper][:bin_dir], cvs_wrapper_folder)
 
-    directory cvs_wrapper_folder do
-      owner new_resource.user
-      group new_resource.user
-      recursive true
-      action :create
-    end.run_action(:create)
-
-    directory cvs_wrapper_etc_folder do
-      owner new_resource.user
-      group new_resource.user
-      recursive true
-      action :create
-    end.run_action(:create)
-
-    directory cvs_wrapper_bin_folder do
-      owner new_resource.user
-      group new_resource.user
-      recursive true
-      action :create
-    end.run_action(:create)
+    [ cvs_wrapper_folder, cvs_wrapper_etc_folder, cvs_wrapper_bin_folder ].each do |path|
+      directory path do
+        owner new_resource.user
+        group new_resource.user
+        recursive true
+        action :create
+      end.run_action(:create)
+    end
 
     template ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
       owner new_resource.user
@@ -130,7 +118,7 @@ action :create do
 
 
       #Redo this bit for the ssh_user cookbook
-      ssh_user_config "tunnel_#{new_resource.cvs_hostalias}" do
+      ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
         options User: new_resource.cvs_jumpbox_user,
             Hostname: new_resource.cvs_jumpbox,
             IdentityFile: new_resource.cvs_jumpbox_identity_file,
@@ -139,7 +127,7 @@ action :create do
         user new_resource.user
        end
    
-      ssh_user_known_hosts new_resource.cvs_jumpbox do
+      ssh_known_hosts new_resource.cvs_jumpbox do
         hashed true
         user new_resource.user
       end

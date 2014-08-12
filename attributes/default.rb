@@ -1,10 +1,12 @@
-default[:system_ruby][:version] = "2.0.0-p353"
-default[:system_ruby][:destination_bin_path] = "/usr/local/bin"
+# System Ruby
+default[:system_ruby][:version] = "ruby 2.1.2"
+default[:system_ruby][:bin_path] = "/usr/local/bin"
 
-default[:cvs_wrapper][:user_subdir] = ".cvs_wrapper.d"
+# CVS wrapper user folder and structure
+default[:cvs_wrapper][:user_dir] = ".cvs_wrapper.d"
+default[:cvs_wrapper][:bin_dir] = "bin"
+default[:cvs_wrapper][:etc_dir] = "etc"
 
-default[:cvs_wrapper][:bindir] = "bin"
-default[:cvs_wrapper][:etcdir] = "etc"
 default[:cvs_wrapper][:shim] = "cvs_wrapper"
 default[:cvs_wrapper][:config] = "config"
 
