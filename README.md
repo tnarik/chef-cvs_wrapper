@@ -1,6 +1,6 @@
 # cvs_wrapper cookbook
 
-[![Build Status](http://img.shields.io/travis/tnarik/cvs_wrapper.svg)](https://travis-ci.org/tnarik/cvs_wrapper)
+[![Build Status](http://img.shields.io/travis/tnarik/chef-cvs_wrapper.svg)](https://travis-ci.org/tnarik/chef-cvs_wrapper)
 
 # Requirements
 
