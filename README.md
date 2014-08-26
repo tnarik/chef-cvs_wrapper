@@ -1,5 +1,7 @@
 # cvs_wrapper cookbook
 
+[![Build Status](http://img.shields.io/travis/tnarik/cvs_wrapper.svg)](https://travis-ci.org/tnarik/cvs_wrapper)
+
 # Requirements
 
 During the development of this cookbook, the main tool used is [chefdk](http://downloads.getchef.com/chef-dk/), which code is available [here](https://github.com/opscode/chef-dk/). There are some additional gems that are documented in the project `Gemfile`. This also allows development in older environments (in general I take my code with me in a USB stick) like MacOSX 10.7, where [chefdk](http://downloads.getchef.com/chef-dk/) is not supported, but the gem version of the tools can be used.
