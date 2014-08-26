@@ -20,3 +20,13 @@ desc 'Runs Rubocop linter.'
 task :rubocop do
   Rubocop::RakeTask.new
 end
+
+desc 'DVM'
+task :dvm do
+  puts "To start 'dvm' in this environment, copy and press [ENTER]"
+  puts ""
+  puts "dvm up"
+  puts "eval $(dvm env)"
+end
+
+task default:  %w[foodcritic rubocop test]
