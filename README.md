@@ -17,6 +17,7 @@ To allow seemless integration of gems, I am using the following approach:
    Just use your preferred shell instead of `zsh`.
 - use the first folder from `gem env gempath` (which should be a user folder) as destination for the bundle install
 - `bundle install --path $(gem env gempath | cut -f1 -d\: | sed -e 's/\/ruby\/2.1.0//g')`
+- as a note, the `vendor/bundle` could also be used, but my goal is integrating with the chefdk installation (via bundler).
 
 This adds some gem duplication right now, but I hope everything is ok (work in progress).
 

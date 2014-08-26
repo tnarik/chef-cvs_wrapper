@@ -6,7 +6,7 @@ description      'Installs/Configures cvs_wrapper'
 long_description 'Installs/Configures cvs_wrapper'
 version          '0.1.0'
 
-#ssh_known_hosts / ssh_user / ssh
+# ssh_known_hosts / ssh_user / ssh
 %w{hostsfile sudo tar ruby_install ssh-util}.each do |cookbook|
   depends cookbook
 end
