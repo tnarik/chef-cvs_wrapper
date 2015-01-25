@@ -1,0 +1,2 @@
+default[:cvs_wrapper][:style] = "auto" # "static" (connection mode identified and set during installation) | "auto" (connection mode detected during runtime, requires 'sudo')
+default[:cvs_wrapper][:sudo] = true # true | false
