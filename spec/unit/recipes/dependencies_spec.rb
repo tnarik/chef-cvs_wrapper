@@ -23,5 +23,13 @@ describe 'cvs_wrapper::dependencies' do
       expect(chef_run).to install_package("cvs")
     end
 
+#    it 'installs thecon gem package' do
+#      expect(chef_run).to install_gem_package('thecon')
+#    end
+#  
+#    it 'installs hostsfile gem package' do
+#      expect(chef_run).to install_gem_package('hostsfile')
+#    end
+
   end
 end
