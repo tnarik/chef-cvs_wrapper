@@ -6,6 +6,10 @@ description      'Installs/Configures cvs_wrapper'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '0.1.0'
 
+%w{pkgutil}.each do |cookbook|
+  depends cookbook
+end
+
 %w{solaris2}.each do |os|
   supports os
-end%
+end

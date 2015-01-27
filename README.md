@@ -16,6 +16,12 @@ In automatic mode (`node[:cvs_wrapper][:style] = "auto"`) it will perform the co
 
 Ideally the cookbook should allow for other solutions, but that is covering my use cases.
 
+
+What this cookbook does is:
+
+1. Install CVS
+2. Provide a wrapper to CVS for different directories
+
 # Attributes
 
 # Recipes
