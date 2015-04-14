@@ -1,9 +1,11 @@
 name             'cvs_wrapper'
 maintainer       'Tnarik Innael'
 maintainer_email 'tnarik@lecafeautomatique.co.uk'
-license          'All rights reserved'
+license          'all_rights'
 description      'Installs/Configures cvs_wrapper'
-long_description 'Installs/Configures cvs_wrapper'
+long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
+source_url       'https://github.com/tnarik/chef-cvs_wrapper'
+issues_url       'https://github.com/tnarik/chef-cvs_wrapper/issues'
 version          '0.1.0'
 
 # ssh_known_hosts / ssh_user / ssh

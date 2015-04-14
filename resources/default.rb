@@ -2,10 +2,7 @@
 # Cookbook Name:: cvs_wrapper
 # Resource:: default
 #
-# Copyright (C) 2013-2014 Tnarik Innael
-#
-# All rights reserved - Do Not Redistribute
-#
+# Copyright (c) 2013-2015 Tnarik Innael, All Rights Reserved
 
 actions :create
 default_action :create
