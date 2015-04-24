@@ -9,6 +9,11 @@ issues_url       'https://github.com/tnarik/chef-cvs_wrapper/issues'
 version          '0.2.0'
 
 # ssh_known_hosts / ssh_user / ssh
-%w{hostsfile sudo tar ruby_install ssh-util}.each do |cookbook|
+#%w{hostsfile sudo tar ruby_install ssh-util}.each do |cookbook|
+%w{hostsfile}.each do |cookbook|
   depends cookbook
+end
+
+%w{solaris2}.each do |os|
+  supports os
 end

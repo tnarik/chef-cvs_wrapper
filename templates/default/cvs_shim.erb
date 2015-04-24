@@ -1,4 +1,4 @@
-  # CVS WRAPPER TO USE WHEN REQUIRING THE USE OF A TUNNEL
+  # CVS Wrapper that enables the use of a tunnel
   function cvs_root(){
     # Extract CVSROOT with priorities
     # 1. -d
@@ -124,10 +124,9 @@
       esac
     fi
 
-    source $(cvs_config)
     # Detect direct connection only when 'auto', otherwise, respect settings or expect forceful set by the user
     # '/etc/hosts' manipulation requires 'sudo'
-    if [ "${DIRECT_CONNECTION}" == "auto" ] && [ "${AUTO_SET_HOSTS}" == "true" ]; then
+    if [ "${DIRECT_CONNECTION}" == "auto" ]; then
       DIRECT_CONNECTION=`ruby -e 'require "thecon"; require "stringio"; oout = $>; $> = fake = StringIO.new; e=Thecon.ready? '${PORT}', "'${IP}'"; $> = oout; p e;'`
       case $DIRECT_CONNECTION in
         "true") cvs_hostsfile_on
