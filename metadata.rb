@@ -10,7 +10,7 @@ version          '0.2.0'
 
 # ssh_known_hosts / ssh_user / ssh
 #%w{hostsfile sudo tar ruby_install ssh-util}.each do |cookbook|
-%w{hostsfile}.each do |cookbook|
+%w{pkgutil hostsfile ssh}.each do |cookbook|
   depends cookbook
 end
 
