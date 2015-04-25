@@ -2,18 +2,26 @@
 # Cookbook Name:: cvs_wrapper
 # Recipe:: default
 #
-# Copyright (C) 2013-2014 Tnarik Innael
-#
-# All rights reserved - Do Not Redistribute
-#
+# Copyright (c) 2013-15 Tnarik Innael, All Rights Reserved.
 
-include_recipe "#{cookbook_name}::environment"
+#include_recipe "#{cookbook_name}::environment"
+#
+#template "/etc/profile.d/cvs_wrapper.sh" do
+#  cookbook cookbook_name.to_s
+#  source "cvs_wrapper.erb.sh"
+#  variables(
+#    path: node[:system_ruby][:bin_path]
+#  )
+#  mode 0755
+#end
 
-template "/etc/profile.d/cvs_wrapper.sh" do
-  cookbook cookbook_name.to_s
-  source "cvs_wrapper.erb.sh"
-  variables(
-    path: node[:system_ruby][:bin_path]
-  )
-  mode 0755
+case node["platform"]
+when "solaris2"
+  pkgutil_package "cvs" do 
+    action :install
+  end
+else
+  package "cvs" do
+    action :install
+  end
 end

@@ -2,10 +2,7 @@
 # Cookbook Name:: cvs_wrapper
 # Recipe:: dependencies
 #
-# Copyright (C) 2014 Tnarik Innael
-#
-# All rights reserved - Do Not Redistribute
-#
+# Copyright (c) 2013-15 Tnarik Innael, All Rights Reserved.
 
 gem_package 'thecon' do
   gem_binary File.join(node[:system_ruby][:bin_path], "gem")

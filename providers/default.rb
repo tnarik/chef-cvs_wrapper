@@ -40,7 +40,7 @@ action :create do
       mode 0755
     end
 
-    if new_resource.cvs_jumpbox.nil?
+      if new_resource.cvs_jumpbox.nil?
       hostsfile_entry new_resource.cvs_hostalias do
         hostname  new_resource.cvs_hostalias
         ip_address new_resource.cvs_hostname
@@ -105,10 +105,24 @@ action :create do
 #        user new_resource.user
 #      end
 
-#      ssh_known_hosts new_resource.cvs_jumpbox do
-#        hashed true
-#        user new_resource.user
-#      end
+
+      ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
+        options ({
+            User: new_resource.cvs_jumpbox_user,
+            Hostname: new_resource.cvs_jumpbox,
+            IdentityFile: '/tmp/id_rsa_4096',
+            LocalForward: "#{new_resource.cvs_port} #{new_resource.cvs_hostname}:#{new_resource.cvs_port}",
+            Compression: 'yes'
+        })
+        user new_resource.user
+        action :add
+      end
+
+      ssh_known_hosts new_resource.cvs_jumpbox do
+        hashed false
+        key new_resource.cvs_jumpbox_key unless new_resource.cvs_jumpbox_key.nil?
+        user new_resource.user
+      end
 
       # Configure access for "static" mode.
       chef_gem "thecon" do
