@@ -19,6 +19,8 @@ action :create do
 #      only_if { node[:cvs_wrapper][:sudo] }
 #    end
 #
+    require 'etc'
+
     cvs_wrapper_folder = ::File.expand_path(node[:cvs_wrapper][:user_dir], "~#{new_resource.user}")
     cvs_wrapper_etc_folder = ::File.expand_path(node[:cvs_wrapper][:etc_dir], cvs_wrapper_folder)
     cvs_wrapper_bin_folder = ::File.expand_path(node[:cvs_wrapper][:bin_dir], cvs_wrapper_folder)
@@ -26,21 +28,37 @@ action :create do
     [cvs_wrapper_folder, cvs_wrapper_etc_folder, cvs_wrapper_bin_folder].each do |path|
       directory path do
         owner new_resource.user
-        group new_resource.group
+        group new_resource.group || Etc.getpwnam(new_resource.user).gid
         recursive true
         action :create
       end
     end
 
+    template ::File.expand_path('cvs', new_resource.cvs_bin_parent) do
+      owner new_resource.user
+      group new_resource.group || Etc.getpwnam(new_resource.user).gid
+      cookbook new_resource.cookbook
+      source "cvs.erb"
+      mode 0755
+      variables(
+        wrapper_path: ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder),
+        cvs_path: '/opt/csw/bin'
+      )
+    end
+
     template ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
       owner new_resource.user
-      group new_resource.group
+      group new_resource.group || Etc.getpwnam(new_resource.user).gid
       cookbook new_resource.cookbook
       source "cvs_shim.erb"
       mode 0755
     end
 
-      if new_resource.cvs_jumpbox.nil?
+    shelly_source ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
+      owner 'developer'
+    end
+
+    if new_resource.cvs_jumpbox.nil?
       hostsfile_entry new_resource.cvs_hostalias do
         hostname  new_resource.cvs_hostalias
         ip_address new_resource.cvs_hostname
@@ -93,24 +111,11 @@ action :create do
 #        not_if { ::File.exists?(jumpbox_identity_file) }
 #      end
 
-#      # Redo this bit for the ssh_user cookbook
-#      ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
-#        options(
-#          User: new_resource.cvs_jumpbox_user,
-#          Hostname: new_resource.cvs_jumpbox,
-#          IdentityFile: new_resource.cvs_jumpbox_identity_file,
-#          LocalForward: "#{new_resource.cvs_port} #{new_resource.cvs_hostname}:#{new_resource.cvs_port}",
-#          Compression: "yes"
-#        )
-#        user new_resource.user
-#      end
-
-
       ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
         options ({
             User: new_resource.cvs_jumpbox_user,
             Hostname: new_resource.cvs_jumpbox,
-            IdentityFile: '/tmp/id_rsa_4096',
+            IdentityFile: '/var/id_rsa_4096', #new_resource.cvs_jumpbox_identity_file
             LocalForward: "#{new_resource.cvs_port} #{new_resource.cvs_hostname}:#{new_resource.cvs_port}",
             Compression: 'yes'
         })
@@ -147,7 +152,7 @@ action :create do
     # Generate cvs_wrapper configuration file
     template ::File.expand_path("#{new_resource.cvs_hostalias}_#{new_resource.cvs_port}", cvs_wrapper_etc_folder) do
       owner new_resource.user
-      group new_resource.group
+      group new_resource.group || Etc.getpwnam(new_resource.user).gid
       cookbook new_resource.cookbook
       source "cvs_wrapper_config.erb"
       variables(

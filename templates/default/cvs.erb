@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+source <%= @wrapper_path %>
+
+pathmunge () {
+  case ":${PATH}:" in
+    *:"${1}":*)
+      ;;
+    *)
+      if [ "${2}" = "after" ] ; then
+        PATH=${PATH}:${1}
+      else
+        PATH=${1}:${PATH}
+      fi
+  esac
+}
+
+# This is now the script, the script calls the command, and this is the command
+pathmunge <%= @cvs_path %>
+cvs $@

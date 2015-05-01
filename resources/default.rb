@@ -21,7 +21,10 @@ attribute :cvs_jumpbox_key, kind_of: [String, NilClass], default: nil
 attribute :cvs_jumpbox_user, kind_of: [String, NilClass], default: nil
 attribute :cvs_jumpbox_sleep, kind_of: Integer, default: 1
 
+attribute :cvs_bin_parent, kind_of: [String, NilClass], default: nil
+
+
 attribute :cookbook, kind_of: String, default: 'cvs_wrapper'
 
 attribute :user, kind_of: String
-attribute :group, kind_of: [String, NilClass], default: nil
+attribute :group, kind_of: [String, Integer, NilClass], default: nil
