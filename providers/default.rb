@@ -25,6 +25,7 @@ action :create do
     cvs_wrapper_etc_folder = ::File.expand_path(node[:cvs_wrapper][:etc_dir], cvs_wrapper_folder)
     cvs_wrapper_bin_folder = ::File.expand_path(node[:cvs_wrapper][:bin_dir], cvs_wrapper_folder)
 
+    # Directory structure
     [cvs_wrapper_folder, cvs_wrapper_etc_folder, cvs_wrapper_bin_folder].each do |path|
       directory path do
         owner new_resource.user
@@ -34,6 +35,11 @@ action :create do
       end
     end
 
+    # CVS 'binary' wrapper
+    chef_gem "ptools" do
+      compile_time true
+    end
+    require 'ptools'
     template ::File.expand_path('cvs', new_resource.cvs_bin_parent) do
       owner new_resource.user
       group new_resource.group || Etc.getpwnam(new_resource.user).gid
@@ -42,10 +48,11 @@ action :create do
       mode 0755
       variables(
         wrapper_path: ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder),
-        cvs_path: '/opt/csw/bin'
+        cvs_path: ::File.dirname(::File.which('cvs'))
       )
     end
 
+    # CVS shell wrapper
     template ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
       owner new_resource.user
       group new_resource.group || Etc.getpwnam(new_resource.user).gid
@@ -58,6 +65,7 @@ action :create do
       owner 'developer'
     end
 
+    # Set configuration
     if new_resource.cvs_jumpbox.nil?
       hostsfile_entry new_resource.cvs_hostalias do
         hostname  new_resource.cvs_hostalias
@@ -68,7 +76,7 @@ action :create do
       direct_connection_detected = true.to_s
     else
       # Set host aliases
-      # through the tunnel
+      # - through the tunnel
       hostsfile_entry "local_#{new_resource.cvs_hostalias}" do
         hostname  "local_#{new_resource.cvs_hostalias}"
         ip_address "127.0.0.1"
@@ -76,7 +84,7 @@ action :create do
         action :append
       end
 
-      # directly
+      # - directly
       hostsfile_entry "direct_#{new_resource.cvs_hostalias}" do
         hostname  "direct_#{new_resource.cvs_hostalias}"
         ip_address new_resource.cvs_hostname
@@ -111,6 +119,8 @@ action :create do
 #        not_if { ::File.exists?(jumpbox_identity_file) }
 #      end
 
+
+      # Set tunnel configuration
       ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
         options ({
             User: new_resource.cvs_jumpbox_user,
@@ -130,12 +140,12 @@ action :create do
       end
 
       # Configure access for "static" mode.
-      chef_gem "thecon" do
-        compile_time true
-      end
-      require 'thecon'
-
       if node[:cvs_wrapper][:style] == "static"
+        chef_gem "thecon" do
+          compile_time true
+        end
+        require 'thecon'
+        
         direct_connection_detected = Thecon.ready?(new_resource.cvs_port, new_resource.cvs_hostname).to_s
 
         hostsfile_entry new_resource.cvs_hostalias do
