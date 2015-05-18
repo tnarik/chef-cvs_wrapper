@@ -52,6 +52,10 @@ action :create do
       )
     end
 
+    shelly_path new_resource.cvs_bin_parent do
+      owner new_resource.user
+    end
+
     # CVS shell wrapper
     template ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
       owner new_resource.user
@@ -62,7 +66,7 @@ action :create do
     end
 
     shelly_source ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
-      owner 'developer'
+      owner new_resource.user
     end
 
     # Set configuration

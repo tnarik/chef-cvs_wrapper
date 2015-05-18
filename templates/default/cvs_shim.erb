@@ -144,9 +144,11 @@
         command cvs "$@"
       ;;
       "false")
-        #execute CVS through an SSH tunnel
+        # execute CVS through an SSH tunnel
         ssh -f ${TUNNEL_NAME} sleep ${TUNNEL_SLEEP}
         command cvs "$@"
+        # ensure tunnel is closed (in case commands ends quickly and another 'cvs' invocation follows)
+        sleep ${TUNNEL_SLEEP}
       ;;
     esac
   )
