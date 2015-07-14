@@ -19,7 +19,7 @@ attribute :cvs_jumpbox, kind_of: [String, NilClass], default: nil
 attribute :cvs_jumpbox_key, kind_of: [String, NilClass], default: nil
 
 attribute :cvs_jumpbox_user, kind_of: [String, NilClass], default: nil
-attribute :cvs_jumpbox_sleep, kind_of: Integer, default: 1
+attribute :cvs_jumpbox_sleep, kind_of: Integer, default: 3
 
 attribute :cvs_bin_parent, kind_of: [String, NilClass], default: nil
 

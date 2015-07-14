@@ -141,12 +141,12 @@
     case $DIRECT_CONNECTION in
       "true")
         #execute the real CVS
-        command cvs "$@"
+        command <%= @cvs_path %>/cvs "$@"
       ;;
       "false")
         # execute CVS through an SSH tunnel
         ssh -f ${TUNNEL_NAME} sleep ${TUNNEL_SLEEP}
-        command cvs "$@"
+        command <%= @cvs_path %>/cvs "$@"
         # ensure tunnel is closed (in case commands ends quickly and another 'cvs' invocation follows)
         sleep ${TUNNEL_SLEEP}
       ;;

@@ -63,6 +63,9 @@ action :create do
       cookbook new_resource.cookbook
       source "cvs_shim.erb"
       mode 0755
+      variables(
+        cvs_path: ::File.dirname(::File.which('cvs'))
+      )
     end
 
     shelly_source ::File.expand_path(node[:cvs_wrapper][:shim], cvs_wrapper_bin_folder) do
