@@ -114,25 +114,27 @@ action :create do
 #     end
 #     # raise "The VF Assembler secret could not be decrypted"
 #    end
+      hashed_env = ENV.to_hash
+      ENV['HOME'] = Etc.getpwnam(new_resource.user).dir
+      jumpbox_identity_file = ::File.expand_path(new_resource.cvs_jumpbox_identity_file)
+      ENV.replace(hashed_env)
 
-#      jumpbox_identity_file = ::File.expand_path(new_resource.cvs_jumpbox_identity_file || "", "~#{new_resource.user}")
-
-#      ruby_block "add_private_key" do
-#        block do
-#          ::FileUtils.cp new_resource.cvs_jumpbox_identity_file_source, jumpbox_identity_file
-#          ::FileUtils.chown new_resource.user, new_resource.user, jumpbox_identity_file
-#          # raise "No existe el archivo seguro para el tunnel, please make sure you copy it!!! "
-#        end
-#        not_if { ::File.exists?(jumpbox_identity_file) }
-#      end
-
+      ruby_block "add_private_key" do
+        block do
+          ::FileUtils.cp new_resource.cvs_jumpbox_identity_file_source, jumpbox_identity_file
+          ::FileUtils.chown new_resource.user, new_resource.group, jumpbox_identity_file
+          ::FileUtils.chmod 0700, jumpbox_identity_file
+          # raise "No existe el archivo seguro para el tunnel, please make sure you copy it!!! "
+        end
+        not_if { ::File.exists?(jumpbox_identity_file) }
+      end
 
       # Set tunnel configuration
       ssh_config "tunnel_#{new_resource.cvs_hostalias}" do
         options ({
             User: new_resource.cvs_jumpbox_user,
             Hostname: new_resource.cvs_jumpbox,
-            IdentityFile: '/var/id_rsa_4096', #new_resource.cvs_jumpbox_identity_file
+            IdentityFile: new_resource.cvs_jumpbox_identity_file,
             LocalForward: "#{new_resource.cvs_port} #{new_resource.cvs_hostname}:#{new_resource.cvs_port}",
             Compression: 'yes'
         })

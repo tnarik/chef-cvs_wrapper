@@ -10,9 +10,10 @@ version          '0.2.0'
 
 # ssh_known_hosts / ssh_user / ssh
 #%w{hostsfile sudo tar ruby_install ssh-util}.each do |cookbook|
-%w{pkgutil hostsfile ssh shelly}.each do |cookbook|
+%w{hostsfile ssh shelly}.each do |cookbook|
   depends cookbook
 end
+depends 'pkgutil', '= 0.0.3'
 
 %w{solaris2}.each do |os|
   supports os

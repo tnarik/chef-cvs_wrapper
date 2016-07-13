@@ -21,7 +21,7 @@ when "solaris2"
     action :install
   end
 else
-  package "cvs" do
-    action :install
-  end
+ package "cvs" do
+   action :install
+ end
 end
